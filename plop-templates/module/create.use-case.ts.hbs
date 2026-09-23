@@ -1,0 +1,23 @@
+import type { Clock } from '#src/shared/kernel/ports/clock.port.js';
+import type { DomainEventPublisher } from '#src/shared/kernel/ports/domain-event-publisher.port.js';
+import type { IdGenerator } from '#src/shared/kernel/ports/id-generator.port.js';
+import { {{pascal entity}} } from '../../domain/entities/{{entity}}.entity.js';
+import type { Create{{pascal entity}}Command } from '../dto/create-{{entity}}.command.js';
+import { to{{pascal entity}}Result, type {{pascal entity}}Result } from '../dto/{{entity}}.result.js';
+import type { {{pascal entity}}Repository } from '../ports/{{entity}}.repository.port.js';
+
+export class Create{{pascal entity}}UseCase {
+  constructor(
+    private readonly repository: {{pascal entity}}Repository,
+    private readonly ids: IdGenerator,
+    private readonly clock: Clock,
+    private readonly events: DomainEventPublisher,
+  ) {}
+
+  async execute(command: Create{{pascal entity}}Command): Promise<{{pascal entity}}Result> {
+    const {{camel entity}} = {{pascal entity}}.create({ id: this.ids.generate(), name: command.name, now: this.clock.now() });
+    await this.repository.create({{camel entity}});
+    await this.events.publish({{camel entity}}.pullEvents());
+    return to{{pascal entity}}Result({{camel entity}});
+  }
+}

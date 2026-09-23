@@ -1,0 +1,23 @@
+import { InMemory{{pascal entity}}Repository } from '#test/fakes/{{context}}/in-memory-{{entity}}.repository.js';
+import { {{pascal entity}} } from '#src/modules/{{context}}/domain/entities/{{entity}}.entity.js';
+import { {{pascal context}}ErrorCode } from '#src/modules/{{context}}/domain/errors/{{context}}.errors.js';
+import { Get{{pascal entity}}UseCase } from '#src/modules/{{context}}/application/use-cases/get-{{entity}}.use-case.js';
+
+describe('Get{{pascal entity}}UseCase', () => {
+  it('returns the {{entity}}', async () => {
+    const repository = new InMemory{{pascal entity}}Repository();
+    const {{camel entity}} = {{pascal entity}}.create({ id: '00000000-0000-4000-8000-000000000001', name: 'Example', now: new Date() });
+    await repository.create({{camel entity}});
+
+    const result = await new Get{{pascal entity}}UseCase(repository).execute({{camel entity}}.id);
+
+    expect(result).toMatchObject({ id: {{camel entity}}.id, name: 'Example' });
+  });
+
+  it('fails with {{constant context}}.NOT_FOUND for an unknown id', async () => {
+    const useCase = new Get{{pascal entity}}UseCase(new InMemory{{pascal entity}}Repository());
+    await expect(useCase.execute('00000000-0000-4000-8000-000000000404')).rejects.toMatchObject({
+      code: {{pascal context}}ErrorCode.NOT_FOUND,
+    });
+  });
+});

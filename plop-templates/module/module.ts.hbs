@@ -1,0 +1,22 @@
+import { Module } from '@nestjs/common';
+import { provideUseCase } from '#src/shared/infrastructure/di/provide-use-case.js';
+import { CLOCK } from '#src/shared/kernel/ports/clock.port.js';
+import { DOMAIN_EVENT_PUBLISHER } from '#src/shared/kernel/ports/domain-event-publisher.port.js';
+import { ID_GENERATOR } from '#src/shared/kernel/ports/id-generator.port.js';
+import { {{constant entity}}_REPOSITORY } from './application/ports/{{entity}}.repository.port.js';
+import { Create{{pascal entity}}UseCase } from './application/use-cases/create-{{entity}}.use-case.js';
+import { Get{{pascal entity}}UseCase } from './application/use-cases/get-{{entity}}.use-case.js';
+import { Prisma{{pascal entity}}Repository } from './infrastructure/persistence/prisma-{{entity}}.repository.js';
+import { {{pascal context}}Controller } from './interface/http/{{context}}.controller.js';
+
+@Module({
+  controllers: [{{pascal context}}Controller],
+  providers: [
+    // Port bindings: the only place adapters are chosen.
+    { provide: {{constant entity}}_REPOSITORY, useClass: Prisma{{pascal entity}}Repository },
+
+    provideUseCase(Create{{pascal entity}}UseCase, [{{constant entity}}_REPOSITORY, ID_GENERATOR, CLOCK, DOMAIN_EVENT_PUBLISHER]),
+    provideUseCase(Get{{pascal entity}}UseCase, [{{constant entity}}_REPOSITORY]),
+  ],
+})
+export class {{pascal context}}Module {}

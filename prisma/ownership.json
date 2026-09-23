@@ -1,0 +1,5 @@
+{
+  "$comment": "Which bounded context owns which Prisma model (rule 7). Checked by scripts/check-table-ownership.ts.",
+  "users": ["user"],
+  "auth": ["refreshToken"]
+}

@@ -1,0 +1,33 @@
+import { FixedClock } from '#test/fakes/fixed-clock.js';
+import { RecordingEventPublisher } from '#test/fakes/recording-event-publisher.js';
+import { SequentialIdGenerator } from '#test/fakes/sequential-id-generator.js';
+import { InMemory{{pascal entity}}Repository } from '#test/fakes/{{context}}/in-memory-{{entity}}.repository.js';
+import { {{pascal context}}ErrorCode } from '#src/modules/{{context}}/domain/errors/{{context}}.errors.js';
+import { {{pascal entity}}CreatedEvent } from '#src/modules/{{context}}/domain/events/{{entity}}-created.event.js';
+import { Create{{pascal entity}}UseCase } from '#src/modules/{{context}}/application/use-cases/create-{{entity}}.use-case.js';
+
+describe('Create{{pascal entity}}UseCase', () => {
+  let repository: InMemory{{pascal entity}}Repository;
+  let events: RecordingEventPublisher;
+  let useCase: Create{{pascal entity}}UseCase;
+
+  beforeEach(() => {
+    repository = new InMemory{{pascal entity}}Repository();
+    events = new RecordingEventPublisher();
+    useCase = new Create{{pascal entity}}UseCase(repository, new SequentialIdGenerator(), new FixedClock(), events);
+  });
+
+  it('persists the {{entity}} and publishes {{pascal entity}}CreatedEvent', async () => {
+    const result = await useCase.execute({ name: '  Example  ' });
+
+    expect(result.name).toBe('Example');
+    expect(await repository.findById(result.id)).not.toBeNull();
+    expect(events.ofType({{pascal entity}}CreatedEvent)).toHaveLength(1);
+  });
+
+  it('rejects a blank name', async () => {
+    await expect(useCase.execute({ name: '  ' })).rejects.toMatchObject({
+      code: {{pascal context}}ErrorCode.INVALID_NAME,
+    });
+  });
+});

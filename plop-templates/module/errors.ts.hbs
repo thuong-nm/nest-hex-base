@@ -1,0 +1,11 @@
+import { DomainError } from '#src/shared/kernel/errors/domain.error.js';
+
+export const {{pascal context}}ErrorCode = {
+  NOT_FOUND: '{{constant context}}.NOT_FOUND',
+  INVALID_NAME: '{{constant context}}.INVALID_NAME',
+} as const;
+
+export const {{pascal context}}Errors = {
+  notFound: () => new DomainError({{pascal context}}ErrorCode.NOT_FOUND, { kind: 'NOT_FOUND' }),
+  invalidName: () => new DomainError({{pascal context}}ErrorCode.INVALID_NAME, { kind: 'VALIDATION' }),
+};

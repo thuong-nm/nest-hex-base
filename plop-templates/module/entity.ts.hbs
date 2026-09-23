@@ -1,0 +1,44 @@
+import { AggregateRoot } from '#src/shared/kernel/domain/aggregate-root.base.js';
+import { {{pascal context}}Errors } from '../errors/{{context}}.errors.js';
+import { {{pascal entity}}CreatedEvent } from '../events/{{entity}}-created.event.js';
+
+export interface {{pascal entity}}Props {
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const NAME_MAX_LENGTH = 200;
+
+export class {{pascal entity}} extends AggregateRoot {
+  private constructor(
+    id: string,
+    private props: {{pascal entity}}Props,
+  ) {
+    super(id);
+  }
+
+  static create(input: { id: string; name: string; now: Date }): {{pascal entity}} {
+    const name = input.name.trim();
+    if (name.length === 0 || name.length > NAME_MAX_LENGTH) throw {{pascal context}}Errors.invalidName();
+
+    const {{camel entity}} = new {{pascal entity}}(input.id, { name, createdAt: input.now, updatedAt: input.now });
+    {{camel entity}}.addEvent(new {{pascal entity}}CreatedEvent({{camel entity}}.id, input.now));
+    return {{camel entity}};
+  }
+
+  /** Rebuilds from persistence. Raises no events. */
+  static restore(id: string, props: {{pascal entity}}Props): {{pascal entity}} {
+    return new {{pascal entity}}(id, { ...props });
+  }
+
+  get name(): string {
+    return this.props.name;
+  }
+  get createdAt(): Date {
+    return this.props.createdAt;
+  }
+  get updatedAt(): Date {
+    return this.props.updatedAt;
+  }
+}

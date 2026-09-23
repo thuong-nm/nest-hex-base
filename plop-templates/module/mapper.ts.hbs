@@ -1,0 +1,21 @@
+import type { Prisma, {{pascal entity}} as Prisma{{pascal entity}} } from '#src/generated/prisma/client.js';
+import { {{pascal entity}} } from '../../domain/entities/{{entity}}.entity.js';
+
+export const {{pascal entity}}Mapper = {
+  toDomain(row: Prisma{{pascal entity}}): {{pascal entity}} {
+    return {{pascal entity}}.restore(row.id, {
+      name: row.name,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    });
+  },
+
+  toPersistence({{camel entity}}: {{pascal entity}}): Prisma.{{pascal entity}}CreateInput {
+    return {
+      id: {{camel entity}}.id,
+      name: {{camel entity}}.name,
+      createdAt: {{camel entity}}.createdAt,
+      updatedAt: {{camel entity}}.updatedAt,
+    };
+  },
+};

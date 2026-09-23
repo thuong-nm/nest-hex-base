@@ -1,0 +1,6 @@
+/**
+ * Public API of the {{context}} bounded context. Other modules may import ONLY from this file.
+ * Export a facade here (see modules/users/users.facade.ts) once another module needs to call in.
+ */
+export { {{pascal context}}Module } from './{{context}}.module.js';
+export { {{pascal entity}}CreatedEvent } from './domain/events/{{entity}}-created.event.js';

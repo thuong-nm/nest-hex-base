@@ -1,0 +1,15 @@
+{
+  "SUCCESS": "Success",
+  "HEALTH_OK": "Service is healthy",
+  "errors": {
+    "BAD_REQUEST": "The request is invalid",
+    "VALIDATION_FAILED": "The submitted data is invalid",
+    "UNAUTHORIZED": "Authentication is required",
+    "FORBIDDEN": "You do not have permission to perform this action",
+    "NOT_FOUND": "The requested resource was not found",
+    "CONFLICT": "The request conflicts with the current state of the resource",
+    "TOO_MANY_REQUESTS": "Too many requests, please try again later",
+    "SERVICE_UNAVAILABLE": "The service is temporarily unavailable",
+    "INTERNAL_ERROR": "An unexpected error occurred"
+  }
+}

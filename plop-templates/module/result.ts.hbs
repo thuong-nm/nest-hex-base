@@ -1,0 +1,17 @@
+import type { {{pascal entity}} } from '../../domain/entities/{{entity}}.entity.js';
+
+export interface {{pascal entity}}Result {
+  id: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export function to{{pascal entity}}Result({{camel entity}}: {{pascal entity}}): {{pascal entity}}Result {
+  return {
+    id: {{camel entity}}.id,
+    name: {{camel entity}}.name,
+    createdAt: {{camel entity}}.createdAt,
+    updatedAt: {{camel entity}}.updatedAt,
+  };
+}

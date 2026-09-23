@@ -1,0 +1,2 @@
+# No CI in this repo: the pre-push hook is the gate that enforces the architecture rules.
+pnpm typecheck && pnpm lint && pnpm lint:arch && pnpm test

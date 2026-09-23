@@ -1,0 +1,19 @@
+import { ApiProperty } from '@nestjs/swagger';
+import type { {{pascal entity}}Result } from '../../../application/dto/{{entity}}.result.js';
+
+/** Explicit field list: never spread a result into a response, or new fields leak by default. */
+export class {{pascal entity}}ResponseDto {
+  @ApiProperty({ format: 'uuid' }) id: string;
+  @ApiProperty() name: string;
+  @ApiProperty() createdAt: Date;
+  @ApiProperty() updatedAt: Date;
+
+  static from(result: {{pascal entity}}Result): {{pascal entity}}ResponseDto {
+    const dto = new {{pascal entity}}ResponseDto();
+    dto.id = result.id;
+    dto.name = result.name;
+    dto.createdAt = result.createdAt;
+    dto.updatedAt = result.updatedAt;
+    return dto;
+  }
+}

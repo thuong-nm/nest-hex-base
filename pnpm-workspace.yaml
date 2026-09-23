@@ -1,0 +1,10 @@
+allowBuilds:
+  '@prisma/engines': true
+  argon2: true
+  esbuild: true
+  prisma: true
+  # Telemetry / optional native speedups; not needed.
+  '@scarf/scarf': false
+  cpu-features: false
+  protobufjs: false
+  ssh2: false

@@ -1,0 +1,19 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaTransactionHost } from '#src/shared/infrastructure/database/transaction.js';
+import type { {{pascal entity}}Repository } from '../../application/ports/{{entity}}.repository.port.js';
+import type { {{pascal entity}} } from '../../domain/entities/{{entity}}.entity.js';
+import { {{pascal entity}}Mapper } from './{{entity}}.mapper.js';
+
+@Injectable()
+export class Prisma{{pascal entity}}Repository implements {{pascal entity}}Repository {
+  constructor(private readonly db: PrismaTransactionHost) {}
+
+  async findById(id: string): Promise<{{pascal entity}} | null> {
+    const row = await this.db.client.{{camel entity}}.findUnique({ where: { id } });
+    return row ? {{pascal entity}}Mapper.toDomain(row) : null;
+  }
+
+  async create({{camel entity}}: {{pascal entity}}): Promise<void> {
+    await this.db.client.{{camel entity}}.create({ data: {{pascal entity}}Mapper.toPersistence({{camel entity}}) });
+  }
+}

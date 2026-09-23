@@ -1,0 +1,8 @@
+import type { {{pascal entity}} } from '../../domain/entities/{{entity}}.entity.js';
+
+export interface {{pascal entity}}Repository {
+  findById(id: string): Promise<{{pascal entity}} | null>;
+  create({{camel entity}}: {{pascal entity}}): Promise<void>;
+}
+
+export const {{constant entity}}_REPOSITORY = Symbol('{{constant entity}}_REPOSITORY');

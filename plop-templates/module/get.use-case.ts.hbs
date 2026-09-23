@@ -1,0 +1,13 @@
+import { {{pascal context}}Errors } from '../../domain/errors/{{context}}.errors.js';
+import { to{{pascal entity}}Result, type {{pascal entity}}Result } from '../dto/{{entity}}.result.js';
+import type { {{pascal entity}}Repository } from '../ports/{{entity}}.repository.port.js';
+
+export class Get{{pascal entity}}UseCase {
+  constructor(private readonly repository: {{pascal entity}}Repository) {}
+
+  async execute(id: string): Promise<{{pascal entity}}Result> {
+    const {{camel entity}} = await this.repository.findById(id);
+    if (!{{camel entity}}) throw {{pascal context}}Errors.notFound();
+    return to{{pascal entity}}Result({{camel entity}});
+  }
+}

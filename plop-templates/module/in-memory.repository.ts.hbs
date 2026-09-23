@@ -1,0 +1,24 @@
+import type { {{pascal entity}}Repository } from '#src/modules/{{context}}/application/ports/{{entity}}.repository.port.js';
+import { {{pascal entity}} } from '#src/modules/{{context}}/domain/entities/{{entity}}.entity.js';
+
+/** Stores snapshots, like a real database, so tests cannot pass by mutating shared instances. */
+export class InMemory{{pascal entity}}Repository implements {{pascal entity}}Repository {
+  private readonly rows = new Map<string, {{pascal entity}}>();
+
+  private snapshot({{camel entity}}: {{pascal entity}}): {{pascal entity}} {
+    return {{pascal entity}}.restore({{camel entity}}.id, {
+      name: {{camel entity}}.name,
+      createdAt: {{camel entity}}.createdAt,
+      updatedAt: {{camel entity}}.updatedAt,
+    });
+  }
+
+  async findById(id: string): Promise<{{pascal entity}} | null> {
+    const row = this.rows.get(id);
+    return row ? this.snapshot(row) : null;
+  }
+
+  async create({{camel entity}}: {{pascal entity}}): Promise<void> {
+    this.rows.set({{camel entity}}.id, this.snapshot({{camel entity}}));
+  }
+}

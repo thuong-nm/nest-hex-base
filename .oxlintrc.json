@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "vitest"],
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/await-thenable": "error",
+    "no-console": ["error", { "allow": ["warn", "error"] }],
+    "no-empty": ["error", { "allowEmptyCatch": false }]
+  },
+  "env": {
+    "node": true
+  },
+  "ignorePatterns": ["src/generated/**", "dist/**", "plop-templates/**"]
+}

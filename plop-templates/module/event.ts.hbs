@@ -1,0 +1,7 @@
+import { DomainEvent } from '#src/shared/kernel/domain/domain-event.base.js';
+
+export class {{pascal entity}}CreatedEvent extends DomainEvent {
+  constructor({{camel entity}}Id: string, occurredAt: Date) {
+    super({{camel entity}}Id, occurredAt);
+  }
+}

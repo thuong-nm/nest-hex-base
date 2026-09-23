@@ -1,0 +1,35 @@
+import { Body, Controller, Get, HttpStatus, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ResponseMessage } from '#src/shared/infrastructure/http/decorators/response-message.decorator.js';
+import { ApiEnvelopeResponse, ApiErrorResponses } from '#src/shared/infrastructure/http/swagger/api-envelope.decorator.js';
+import { Create{{pascal entity}}UseCase } from '../../application/use-cases/create-{{entity}}.use-case.js';
+import { Get{{pascal entity}}UseCase } from '../../application/use-cases/get-{{entity}}.use-case.js';
+import { Create{{pascal entity}}RequestDto } from './dto/create-{{entity}}.request.dto.js';
+import { {{pascal entity}}ResponseDto } from './dto/{{entity}}.response.dto.js';
+
+@ApiTags('{{context}}')
+@ApiBearerAuth()
+@ApiErrorResponses(HttpStatus.UNAUTHORIZED)
+@Controller('{{context}}')
+export class {{pascal context}}Controller {
+  constructor(
+    private readonly create{{pascal entity}}: Create{{pascal entity}}UseCase,
+    private readonly get{{pascal entity}}: Get{{pascal entity}}UseCase,
+  ) {}
+
+  @Post()
+  @ResponseMessage('{{context}}.CREATED')
+  @ApiEnvelopeResponse({{pascal entity}}ResponseDto, { status: HttpStatus.CREATED })
+  @ApiErrorResponses(HttpStatus.BAD_REQUEST)
+  async create(@Body() body: Create{{pascal entity}}RequestDto): Promise<{{pascal entity}}ResponseDto> {
+    return {{pascal entity}}ResponseDto.from(await this.create{{pascal entity}}.execute(body));
+  }
+
+  @Get(':id')
+  @ResponseMessage('{{context}}.FOUND')
+  @ApiEnvelopeResponse({{pascal entity}}ResponseDto)
+  @ApiErrorResponses(HttpStatus.NOT_FOUND)
+  async get(@Param('id', ParseUUIDPipe) id: string): Promise<{{pascal entity}}ResponseDto> {
+    return {{pascal entity}}ResponseDto.from(await this.get{{pascal entity}}.execute(id));
+  }
+}

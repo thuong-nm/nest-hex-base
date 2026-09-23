@@ -1,0 +1,12 @@
+{
+  "LIST_SUCCESS": "Users retrieved",
+  "ROLE_CHANGED": "User role updated",
+  "STATUS_CHANGED": "User status updated",
+  "errors": {
+    "EMAIL_TAKEN": "This email is already registered",
+    "NOT_FOUND": "User not found",
+    "INVALID_EMAIL": "The email address is invalid",
+    "INVALID_NAME": "The name is invalid",
+    "CANNOT_MODIFY_SELF": "You cannot change your own role or status"
+  }
+}
