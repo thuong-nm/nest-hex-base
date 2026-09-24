@@ -262,7 +262,7 @@ How they are enforced here:
 - Every validation decorator uses `i18nValidationMessage<I18nTranslations>('validation.KEY')`. Built-in class-validator errors without a message fall back to `validation.<CONSTRAINT_NAME>` (e.g. `WHITELIST_VALIDATION`).
 - Every new key goes into every locale in the same commit. Keys are typed: a missing or misspelled key fails `pnpm typecheck`.
 - Language resolution:
-  - order: the `lang` header, then `Accept-Language`, then `en`
+  - order: the `lang` header, then `Accept-Language`, then `DEFAULT_LANG` (env, default `en`; always added to `SUPPORTED_LANGS`)
   - normalized (`en-US` → `en`) and limited to `SUPPORTED_LANGS`
   - the result is echoed in `Content-Language`
 - The resolver lives in `shared/infrastructure/i18n/lang.resolver.ts`. The `lang` header is documented globally in Swagger.

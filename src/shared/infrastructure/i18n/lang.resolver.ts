@@ -1,8 +1,13 @@
 import type { ExecutionContext } from '@nestjs/common';
 import { I18nResolverOptions, type I18nResolver } from 'nestjs-i18n';
-import { DEFAULT_LANG } from './i18n.types.js';
 
 export const LANG_HEADER = 'lang';
+
+export interface LangOptions {
+  supported: readonly string[];
+  /** `DEFAULT_LANG`; always one of `supported`. */
+  fallback: string;
+}
 
 /** `en-US` / `EN_us` → `en`. */
 export function normalizeLang(value: string): string {
@@ -25,12 +30,12 @@ function parseAcceptLanguage(header: string): string[] {
 }
 
 /**
- * `lang` header wins, then Accept-Language, then `en`. Anything not in `supported` is skipped,
- * so the result is always a language we have translations for.
+ * `lang` header wins, then Accept-Language, then `fallback`. Anything not in `supported` is
+ * skipped, so the result is always a language we have translations for.
  */
 export function resolveLang(
   headers: { lang?: string | string[]; acceptLanguage?: string | string[] },
-  supported: readonly string[],
+  { supported, fallback }: LangOptions,
 ): string {
   const first = (value?: string | string[]) => (Array.isArray(value) ? value[0] : value);
   const explicit = first(headers.lang);
@@ -43,11 +48,11 @@ export function resolveLang(
     const match = parseAcceptLanguage(accept).find((lang) => supported.includes(lang));
     if (match) return match;
   }
-  return DEFAULT_LANG;
+  return fallback;
 }
 
 export class LangResolver implements I18nResolver {
-  constructor(@I18nResolverOptions() private readonly supported: string[]) {}
+  constructor(@I18nResolverOptions() private readonly options: LangOptions) {}
 
   resolve(context: ExecutionContext): string {
     const req = context
@@ -55,7 +60,7 @@ export class LangResolver implements I18nResolver {
       .getRequest<{ headers: Record<string, string | string[] | undefined> }>();
     return resolveLang(
       { lang: req.headers[LANG_HEADER], acceptLanguage: req.headers['accept-language'] },
-      this.supported,
+      this.options,
     );
   }
 }

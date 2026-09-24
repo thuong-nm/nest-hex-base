@@ -9,11 +9,9 @@ import {
 } from '@nestjs/common';
 import type { ValidationError } from 'class-validator';
 import type { Request, Response } from 'express';
-import { I18nContext } from 'nestjs-i18n';
 import { DomainError, type DomainErrorKind } from '#src/shared/kernel/errors/domain.error.js';
 import { CommonErrorCode } from '#src/shared/kernel/errors/error-codes.js';
 import { errorCodeToI18nKey } from '#src/shared/infrastructure/i18n/error-key.js';
-import { DEFAULT_LANG } from '#src/shared/infrastructure/i18n/i18n.types.js';
 import { TranslatorService } from '#src/shared/infrastructure/i18n/translator.service.js';
 import { getRequestId, REQUEST_ID_HEADER } from '#src/shared/infrastructure/logger/request-id.js';
 import { RequestValidationException } from '../errors/request-validation.exception.js';
@@ -68,7 +66,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const req = ctx.getRequest<Request>();
     const res = ctx.getResponse<Response>();
-    const lang = I18nContext.current(host)?.lang ?? DEFAULT_LANG;
+    const lang = this.translator.langOf(host);
 
     const error = this.normalize(exception, lang);
     if (error.status >= 500) {

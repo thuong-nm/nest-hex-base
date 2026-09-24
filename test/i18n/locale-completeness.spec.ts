@@ -1,24 +1,21 @@
-import { DEFAULT_LANG } from '#src/shared/infrastructure/i18n/i18n.types.js';
 import { flattenKeys, localeKeys, locales, namespaces, readNamespace } from './locales.js';
 
-/** Fails when a key exists in one locale but not in another (in either direction). */
+/**
+ * Fails when a key exists in one locale but not in another. Every locale is compared with the
+ * union of all locales, so no language (in particular not DEFAULT_LANG) is treated as the source.
+ */
 describe('locale completeness', () => {
   const all = locales();
-  const reference = localeKeys(DEFAULT_LANG);
+  const allKeys = new Set(all.flatMap((lang) => [...localeKeys(lang)]));
+  const allNamespaces = [...new Set(all.flatMap(namespaces))].sort();
 
-  it('has the default language', () => {
-    expect(all).toContain(DEFAULT_LANG);
-  });
-
-  it.each(all.filter((lang) => lang !== DEFAULT_LANG))('%s has exactly the keys of en', (lang) => {
+  it.each(all)('%s has every key of the other locales', (lang) => {
     const keys = localeKeys(lang);
-    const missing = [...reference].filter((key) => !keys.has(key));
-    const extra = [...keys].filter((key) => !reference.has(key));
-    expect({ missing, extra }).toEqual({ missing: [], extra: [] });
+    expect([...allKeys].filter((key) => !keys.has(key))).toEqual([]);
   });
 
-  it.each(all)('%s has the same namespace files as en', (lang) => {
-    expect(namespaces(lang)).toEqual(namespaces(DEFAULT_LANG));
+  it.each(all)('%s has every namespace file of the other locales', (lang) => {
+    expect(namespaces(lang)).toEqual(allNamespaces);
   });
 
   it.each(all)('%s has no empty translations', (lang) => {

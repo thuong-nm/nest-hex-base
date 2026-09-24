@@ -5,5 +5,3 @@ export type { I18nTranslations };
 
 /** Any valid translation key. Misspelled or removed keys fail `pnpm typecheck`. */
 export type I18nKey = Path<I18nTranslations>;
-
-export const DEFAULT_LANG = 'en';

@@ -1,7 +1,7 @@
 import { normalizeLang, resolveLang } from '#src/shared/infrastructure/i18n/lang.resolver.js';
 
 describe('resolveLang', () => {
-  const supported = ['en', 'vi'];
+  const options = { supported: ['en', 'vi'], fallback: 'en' };
 
   it.each([
     [{ lang: 'vi' }, 'vi'],
@@ -17,11 +17,20 @@ describe('resolveLang', () => {
     [{ lang: ['vi', 'en'] }, 'vi'],
     [{}, 'en'],
   ])('%o → %s', (headers, expected) => {
-    expect(resolveLang(headers, supported)).toBe(expected);
+    expect(resolveLang(headers, options)).toBe(expected);
   });
 
   it('never returns a language outside the supported list', () => {
-    expect(resolveLang({ lang: 'vi', acceptLanguage: 'vi' }, ['en'])).toBe('en');
+    expect(
+      resolveLang({ lang: 'vi', acceptLanguage: 'vi' }, { supported: ['en'], fallback: 'en' }),
+    ).toBe('en');
+  });
+
+  it('falls back to the configured default language', () => {
+    const vi = { supported: ['en', 'vi'], fallback: 'vi' };
+    expect(resolveLang({}, vi)).toBe('vi');
+    expect(resolveLang({ lang: 'de', acceptLanguage: 'fr' }, vi)).toBe('vi');
+    expect(resolveLang({ lang: 'en' }, vi)).toBe('en');
   });
 });
 

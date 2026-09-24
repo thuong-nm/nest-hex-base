@@ -4,8 +4,7 @@ import { Global, Module } from '@nestjs/common';
 import { I18nModule as NestI18nModule } from 'nestjs-i18n';
 import { AppConfigModule } from '../config/app-config.module.js';
 import { AppConfigService } from '../config/app-config.service.js';
-import { DEFAULT_LANG } from './i18n.types.js';
-import { LangResolver } from './lang.resolver.js';
+import { type LangOptions, LangResolver } from './lang.resolver.js';
 import { TranslatorService } from './translator.service.js';
 
 // Resolves to src/i18n in dev/tests and dist/i18n in production (copied as a Nest CLI asset).
@@ -29,7 +28,7 @@ function assertLocalesExist(langs: readonly string[]): void {
       useFactory: (config: AppConfigService) => {
         assertLocalesExist(config.get('SUPPORTED_LANGS'));
         return {
-          fallbackLanguage: DEFAULT_LANG,
+          fallbackLanguage: config.get('DEFAULT_LANG'),
           loaderOptions: {
             path: TRANSLATIONS_DIR,
             watch: config.get('NODE_ENV') === 'development',
@@ -41,7 +40,10 @@ function assertLocalesExist(langs: readonly string[]): void {
         {
           use: LangResolver,
           inject: [AppConfigService],
-          useFactory: (config: AppConfigService) => config.get('SUPPORTED_LANGS'),
+          useFactory: (config: AppConfigService): LangOptions => ({
+            supported: config.get('SUPPORTED_LANGS'),
+            fallback: config.get('DEFAULT_LANG'),
+          }),
         },
       ],
     }),

@@ -8,6 +8,7 @@ Object.assign(process.env, {
   LOG_LEVEL: 'silent',
   SWAGGER_ENABLED: 'false',
   CORS_ORIGINS: '*',
+  DEFAULT_LANG: 'en',
   SUPPORTED_LANGS: 'en,vi',
   JWT_ACCESS_SECRET: 'e2e-secret-that-is-at-least-32-characters-long',
   JWT_ACCESS_TTL_SECONDS: '900',

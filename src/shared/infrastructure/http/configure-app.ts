@@ -28,5 +28,10 @@ export function configureApp(app: INestApplication): void {
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
   app.enableShutdownHooks();
 
-  if (config.get('SWAGGER_ENABLED')) setupSwagger(app, config.get('SUPPORTED_LANGS'));
+  if (config.get('SWAGGER_ENABLED')) {
+    setupSwagger(app, {
+      supported: config.get('SUPPORTED_LANGS'),
+      fallback: config.get('DEFAULT_LANG'),
+    });
+  }
 }

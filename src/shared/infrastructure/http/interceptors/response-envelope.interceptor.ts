@@ -6,9 +6,8 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request, Response } from 'express';
-import { I18nContext } from 'nestjs-i18n';
 import { map, type Observable } from 'rxjs';
-import { DEFAULT_LANG, type I18nKey } from '#src/shared/infrastructure/i18n/i18n.types.js';
+import type { I18nKey } from '#src/shared/infrastructure/i18n/i18n.types.js';
 import { TranslatorService } from '#src/shared/infrastructure/i18n/translator.service.js';
 import { getRequestId } from '#src/shared/infrastructure/logger/request-id.js';
 import { RESPONSE_MESSAGE_KEY } from '../decorators/response-message.decorator.js';
@@ -35,7 +34,7 @@ export class ResponseEnvelopeInterceptor implements NestInterceptor {
     const http = context.switchToHttp();
     const req = http.getRequest<Request>();
     const res = http.getResponse<Response>();
-    const lang = I18nContext.current(context)?.lang ?? DEFAULT_LANG;
+    const lang = this.translator.langOf(context);
     const key =
       this.reflector.getAllAndOverride<I18nKey | undefined>(RESPONSE_MESSAGE_KEY, [
         context.getHandler(),
