@@ -111,6 +111,46 @@ describe('admin users (e2e)', () => {
     expect(search.body.data[0]).not.toHaveProperty('passwordHash');
   });
 
+  it('sorts users by createdAt or updatedAt, newest created first by default', async () => {
+    const alice = await register(t, 'alice@example.com');
+    await register(t, 'bob@example.com');
+    await asAdmin(t.http().patch(`/api/v1/admin/users/${alice.id}/status`))
+      .send({ status: 'DISABLED' })
+      .expect(200);
+    const emails = async (query: string) =>
+      (await asAdmin(t.http().get(`/api/v1/admin/users${query}`)).expect(200)).body.data.map(
+        (u: { email: string }) => u.email,
+      );
+
+    expect(await emails('')).toEqual(['bob@example.com', 'alice@example.com', 'admin@example.com']);
+    expect(await emails('?sortBy=createdAt&sortOrder=asc')).toEqual([
+      'admin@example.com',
+      'alice@example.com',
+      'bob@example.com',
+    ]);
+    expect(await emails('?sortBy=updatedAt&sortOrder=desc')).toEqual([
+      'alice@example.com',
+      'bob@example.com',
+      'admin@example.com',
+    ]);
+
+    expect(await emails('?sortBy=email&sortOrder=desc')).toEqual([
+      'bob@example.com',
+      'alice@example.com',
+      'admin@example.com',
+    ]);
+
+    // Only the fields the module allows: sorting by a hidden column would leak its order.
+    const invalid = await asAdmin(t.http().get('/api/v1/admin/users?sortBy=passwordHash')).expect(
+      400,
+    );
+    expect(invalid.body.error.details).toContainEqual({
+      field: 'sortBy',
+      code: 'VALIDATION.IS_IN',
+      message: 'sortBy must be one of: createdAt, updatedAt, email, name',
+    });
+  });
+
   it('returns USERS.NOT_FOUND for an unknown user id', async () => {
     const res = await t
       .http()

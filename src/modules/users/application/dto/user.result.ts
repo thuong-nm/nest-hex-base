@@ -1,3 +1,4 @@
+import type { ListResult } from '#src/shared/kernel/list-query.js';
 import type { User } from '../../domain/entities/user.entity.js';
 import type { Role } from '../../domain/value-objects/role.vo.js';
 import type { UserStatus } from '../../domain/value-objects/user-status.vo.js';
@@ -25,9 +26,4 @@ export function toUserResult(user: User): UserResult {
   };
 }
 
-export interface UserListResult {
-  items: UserResult[];
-  total: number;
-  page: number;
-  limit: number;
-}
+export type UserListResult = ListResult<UserResult>;

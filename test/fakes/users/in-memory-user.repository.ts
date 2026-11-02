@@ -5,6 +5,7 @@ import type {
 import { User } from '#src/modules/users/domain/entities/user.entity.js';
 import { UsersErrors } from '#src/modules/users/domain/errors/users.errors.js';
 import type { Email } from '#src/modules/users/domain/value-objects/email.vo.js';
+import { applyListQuery } from '../apply-list-query.js';
 
 /** Stores snapshots, like a real database, so tests cannot pass by mutating shared instances. */
 export class InMemoryUserRepository implements UserRepository {
@@ -50,11 +51,13 @@ export class InMemoryUserRepository implements UserRepository {
         (!criteria.status || u.status === criteria.status) &&
         (!criteria.search || u.email.value.includes(criteria.search.toLowerCase())),
     );
-    const start = (criteria.page - 1) * criteria.limit;
-    return {
-      items: matching.slice(start, start + criteria.limit).map((u) => this.snapshot(u)),
-      total: matching.length,
-    };
+    const { items, total } = applyListQuery(matching, criteria, (u) => ({
+      createdAt: u.createdAt,
+      updatedAt: u.updatedAt,
+      email: u.email.value,
+      name: u.name,
+    }));
+    return { items: items.map((u) => this.snapshot(u)), total };
   }
 
   /** Test helper: seed a user directly. */

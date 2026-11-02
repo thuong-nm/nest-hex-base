@@ -8,7 +8,7 @@ import {
   Patch,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { AuthenticatedUser } from '#src/shared/infrastructure/http/auth-context.js';
 import { CurrentUser } from '#src/shared/infrastructure/http/decorators/current-user.decorator.js';
 import { ResponseMessage } from '#src/shared/infrastructure/http/decorators/response-message.decorator.js';
@@ -40,6 +40,7 @@ export class AdminUsersController {
   ) {}
 
   @Get()
+  @ApiOperation({ summary: 'List users', description: '`search` matches email.' })
   @ResponseMessage('users.LIST_SUCCESS')
   @ApiEnvelopeResponse(UserResponseDto, { paginated: true })
   @ApiErrorResponses(HttpStatus.BAD_REQUEST)

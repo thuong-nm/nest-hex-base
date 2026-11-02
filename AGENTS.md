@@ -10,6 +10,7 @@ task. If the code and this file disagree, stop and report it; do not silently pi
 - Auth: register / login / rotating refresh tokens with reuse detection / logout / me; JWT access tokens; argon2 passwords.
 - Authorization: `USER` / `ADMIN` roles, `ACTIVE` / `DISABLED` status, admin endpoints under `/api/v1/admin/...`.
 - Every response is a translated envelope (`lang` header); architecture rules are enforced by `pnpm lint:arch`.
+- Every list (`GET` collection) endpoint shares one query contract: `page`, `limit`, `search`, `sortBy` (API field names, never column names) and `sortOrder` (hard rule 9, §6 "Add a list endpoint").
 
 ## 2. Before you start any task
 
@@ -18,6 +19,7 @@ task. If the code and this file disagree, stop and report it; do not silently pi
 3. Copy the patterns in `src/modules/users` and `src/modules/auth` (the reference implementation).
 4. Never add a dependency without stating, in your reply, why it is needed and why existing dependencies are not enough.
 5. Verify library APIs against the installed version (`node_modules/<pkg>`) or current docs. Do not guess.
+6. If the task adds or changes an endpoint that returns a collection, follow §6 "Add a list endpoint" step by step. It is mandatory (hard rule 9).
 
 ## 3. Architecture
 
@@ -64,11 +66,13 @@ src/
 │  │  ├─ domain/                    # entity.base, aggregate-root.base, value-object.base, domain-event.base
 │  │  ├─ errors/                    # domain.error.ts, error-codes.ts (COMMON.*)
 │  │  ├─ result.ts                  # Result<T, E>, ok, err, unwrap
+│  │  ├─ list-query.ts              # ListQuery, ListResult, sortFields(), SortOrder, normalizeSearch
 │  │  └─ ports/                     # clock, id-generator, domain-event-publisher, transaction-runner
 │  └─ infrastructure/
 │     ├─ infrastructure.module.ts   # imports everything below; imported once by AppModule
 │     ├─ config/                    # env.schema.ts (Zod, fail fast), AppConfigService
-│     ├─ database/                  # PrismaService, PrismaTransactionHost (ambient tx), prisma-errors
+│     ├─ database/                  # PrismaService, PrismaTransactionHost (ambient tx), prisma-errors,
+│     │                             # toPrismaListArgs (skip/take/orderBy for a ListQuery)
 │     ├─ logger/                    # nestjs-pino, X-Request-Id
 │     ├─ i18n/                      # nestjs-i18n setup, LangResolver, error-code → key, TranslatorService
 │     ├─ http/
@@ -80,7 +84,7 @@ src/
 │     │  ├─ guards/                 # JwtAuthGuard (global), RolesGuard (global)
 │     │  ├─ decorators/             # @Public(), @Roles(), @CurrentUser(), @ResponseMessage()
 │     │  ├─ errors/                 # AppHttpException, RequestValidationException
-│     │  ├─ dto/                    # PaginationQueryDto, PaginatedResponse
+│     │  ├─ dto/                    # ListQueryDto(sortFields) (page, limit, search, sortBy, sortOrder), PaginatedResponse
 │     │  └─ swagger/                # @ApiEnvelopeResponse(), @ApiErrorResponses(), global `lang` header
 │     ├─ health/                    # GET /health (Terminus, DB ping)
 │     ├─ di/provide-use-case.ts     # factory provider for decorator-free use cases
@@ -138,6 +142,7 @@ Empty folders keep a `.gitkeep`.
 6. Async cross-module communication uses domain events via `@nestjs/cqrs` EventBus.
 7. A module reads and writes only its own tables.
 8. Enforce rules 1–7 with dependency-cruiser; `pnpm lint:arch` must fail on violations and run in CI.
+9. Every `GET` endpoint that returns a collection supports pagination, `search` and sorting through the shared list contract (§6 "Add a list endpoint"). `sortBy` accepts only API field names from the module's allowlist; the repository maps them to columns.
 
 How they are enforced here:
 
@@ -146,6 +151,7 @@ How they are enforced here:
 - Rule 5 clarification: another module's `index.ts` may be imported only from the consumer's `infrastructure/`, `interface/events/` (to subscribe to the provider's event classes), and `<context>.module.ts` (to import the provider's Nest module).
 - Rule 6: publish through the `DOMAIN_EVENT_PUBLISHER` kernel port. Handle events in `interface/events/*.handler.ts`, which calls a use case.
 - Rule 7: every Prisma model is assigned to one module in `prisma/ownership.json`. `scripts/check-table-ownership.ts` (part of `lint:arch`) fails when a module touches a model it does not own, or when a model has no owner. Never add a Prisma `@relation` across modules: store the other module's id as a plain column.
+- Rule 9 is not checked by `lint:arch`; the shared pieces make it hard to get wrong. `ListQueryDto(...)` validates the query, a `SORT_COLUMNS` map typed with `satisfies` fails typecheck on an unmapped key or an unknown column, and `applyListQuery` fails typecheck when a fake misses a key. The e2e test the recipe requires and the Definition of Done (§10) cover the rest.
 - Rule 8: **this repository has no CI yet.** `lint:arch` runs in the Husky `pre-push` hook together with typecheck, lint and test. When CI is added, it must run `pnpm typecheck && pnpm lint && pnpm lint:arch && pnpm test && pnpm test:e2e`.
 
 ## 5. Naming conventions
@@ -166,6 +172,8 @@ How they are enforced here:
 | Request / response DTO | `login.request.dto.ts`, `user.response.dto.ts`       | `LoginRequestDto`, `UserResponseDto`                                     |
 | Event handler          | `user-status-changed.handler.ts`                     | `UserStatusChangedHandler`                                               |
 | Facade                 | `users.facade.ts`                                    | `UsersFacade`                                                            |
+| List sort keys         | `user.repository.port.ts`                            | `USER_SORT_FIELDS = sortFields('email', 'name')` + `UserSortField`       |
+| Sort key → column map  | `prisma-user.repository.ts`                          | `SORT_COLUMNS` (module-private constant)                                 |
 
 - Symbol tokens: `SCREAMING_SNAKE` of the port name: `USER_REPOSITORY`, `TOKEN_SERVICE`, `USER_ACCOUNT`.
 - Error codes: `<CONTEXT>.<SCREAMING_SNAKE>`. `<CONTEXT>` is the module folder name in `SCREAMING_SNAKE` (`order-items` → `ORDER_ITEMS`), e.g. `USERS.EMAIL_TAKEN`, `AUTH.INVALID_CREDENTIALS`. Shared codes are `COMMON.*` (`shared/kernel/errors/error-codes.ts`).
@@ -174,6 +182,7 @@ How they are enforced here:
   - Success messages use `<namespace>.<SCREAMING_SNAKE>`, e.g. `auth.LOGIN_SUCCESS`.
   - Error messages use `<namespace>.errors.<CODE_SUFFIX>`: `AUTH.INVALID_CREDENTIALS` → `auth.errors.INVALID_CREDENTIALS`, and `ORDER_ITEMS.X` → `order-items.errors.X`.
   - Validation messages use `validation.<SCREAMING_SNAKE>`. The response `code` is `VALIDATION.<SAME>`.
+- List query params: exactly `page`, `limit`, `search`, `sortBy`, `sortOrder`. Never `pageSize`, `offset`, `sort`, `order`, `orderBy` or `q`. `sortBy` values are the field names the API returns (camelCase), never column names.
 - Routes:
   - Controllers declare paths without prefix or version (`@Controller('admin/users')`); `/api/v1` is added globally.
   - Admin controllers use `admin/<resource>`.
@@ -196,9 +205,12 @@ How they are enforced here:
 2. `pnpm db:migrate --name add-<context>`.
 3. Translate `src/i18n/<lang>/<context>.json` for every non-English locale (they are seeded with English).
 4. Replace the example `name` field with the real model (entity, mapper, Prisma model, DTOs, tests).
-5. Run the Definition of Done checks (§10).
+5. The generator scaffolds create/get only. Add any list endpoint with "Add a list endpoint" below.
+6. Run the Definition of Done checks (§10).
 
 ### Add a new endpoint
+
+For an endpoint that returns a collection, also follow "Add a list endpoint" below.
 
 1. Request DTO in `interface/http/dto/<name>.request.dto.ts`:
    - class-validator decorators, each with `message: i18nValidationMessage<I18nTranslations>('validation.X')`
@@ -216,6 +228,54 @@ How they are enforced here:
 7. Add the new i18n keys (success message, error codes) to **every** locale, then run `pnpm i18n:types`.
 8. Add a unit test for the use case with in-memory fakes, at the mirrored path under `test/modules/<context>/`, and an e2e test in `test/e2e/`.
 9. Check `/docs` (Swagger) shows the endpoint correctly.
+
+### Add a list endpoint
+
+Every `GET` endpoint that returns a collection MUST support pagination, search and sorting with
+these query parameters. No exceptions, including admin endpoints.
+
+| Param       | Values                                                                        | Default     |
+| ----------- | ----------------------------------------------------------------------------- | ----------- |
+| `page`      | integer ≥ 1                                                                   | `1`         |
+| `limit`     | integer 1–100                                                                 | `20`        |
+| `search`    | string, max 100 chars                                                         | none        |
+| `sortBy`    | API field name (free text): `createdAt`, `updatedAt` + the module's allowlist | `createdAt` |
+| `sortOrder` | `asc` \| `desc`                                                               | `desc`      |
+
+1. Declare the sortable fields once, next to the repository port, and type the criteria with them:
+   ```ts
+   export const ORDER_SORT_FIELDS = sortFields('total', 'placedAt'); // + createdAt, updatedAt
+   export type OrderSortField = (typeof ORDER_SORT_FIELDS)[number];
+   export interface OrderListCriteria extends ListQuery<OrderSortField> {
+     status?: OrderStatus;
+   }
+   ```
+   - each name is a field as the API returns it (a key of `<Name>ResponseDto`), never a column name: the repository maps names to columns (step 6), so renaming a column never breaks clients
+   - never allow a field the response does not expose (`passwordHash`, tokens, internal flags): sorting by it leaks the order of its values
+   - add a `@@index` on the mapped column when the table can grow large; prefer non-nullable columns (Postgres puts `NULL`s first in `desc`)
+2. The request DTO extends `ListQueryDto(<CONTEXT>_SORT_FIELDS)` (`shared/infrastructure/http/dto/list-query.dto.ts`) and adds only the resource's own filters (e.g. `role`, `status`). Never redeclare the five params above. `sortBy` is a text field in Swagger whose description lists the allowed names; any other value fails with `VALIDATION.IS_IN` (400).
+3. The repository port's `list()` returns `{ items, total }`.
+4. The use case:
+   - passes `search` through `normalizeSearch()` (trimmed; blank means no search)
+   - returns `ListResult<<Name>Result>` (`items`, `total`, `page`, `limit`)
+5. The module decides which fields `search` matches: a case-insensitive substring match (Prisma `contains` + `mode: 'insensitive'`, `OR` across several fields). List those fields in `@ApiOperation({ description })` on the controller method.
+6. The Prisma repository maps every sort key to a column, then spreads `toPrismaListArgs(criteria, SORT_COLUMNS)` into `findMany`. The helper sets `skip`/`take` and orders by the mapped column with `id` as tiebreaker, so pages never overlap. Run `count` with the same `where`. A listed model must therefore have an `id` column.
+   ```ts
+   const SORT_COLUMNS = {
+     createdAt: 'createdAt',
+     updatedAt: 'updatedAt',
+     total: 'totalAmount', // API key → column
+     placedAt: 'placedAt',
+   } as const satisfies Record<OrderSortField, keyof Prisma.OrderOrderByWithRelationInput>;
+   ```
+   `satisfies` fails typecheck on a missing key or a column the model does not have.
+7. The in-memory fake filters, then calls `applyListQuery(rows, criteria, sortValues)` from `test/fakes/apply-list-query.ts`. `sortValues` maps an entity to every API sort key (e.g. `email: u.email.value`); the compiler rejects a missing key.
+8. The controller returns a `PaginatedResponse` (items mapped with `<Name>ResponseDto.from`), with `@ApiEnvelopeResponse(<Name>ResponseDto, { paginated: true })` and `@ApiErrorResponses(HttpStatus.BAD_REQUEST)`.
+9. Tests:
+   - the use-case spec covers search, pagination, and every sort field (build commands from `DEFAULT_LIST_QUERY`)
+   - the e2e test covers every sort field, a rejected `sortBy`, and `meta.pagination`
+
+To make a new field sortable later, add its API name to the module's `sortFields(...)` call, map it to a column in the repository's `SORT_COLUMNS`, add it to the fake's `sortValues`, and extend both tests.
 
 ### Add a new outbound integration (email, payments, storage, ...)
 
@@ -285,6 +345,7 @@ How they are enforced here:
 - Never accept `role`, `status`, `userId` or ownership from the request body to decide authorization. Use `@CurrentUser()`, which is always derived from the verified JWT.
 - Every route requires a valid access token unless it is explicitly marked `@Public()`. Admin routes add `@Roles(Role.ADMIN)`.
 - Registration can never set a role. Unknown body fields are rejected (`forbidNonWhitelisted`).
+- List sorting accepts only the module's allowlisted API field names (`<CONTEXT>_SORT_FIELDS`), all of which the response exposes. Never pass `sortBy` or any other client input straight into Prisma `orderBy`, and never allow sorting by a hidden field (`passwordHash`, tokens, internal flags): the order leaks its values.
 - Login failures return `AUTH.INVALID_CREDENTIALS` for both unknown email and wrong password. Keep the timing equal too: `PasswordHasher.verify(null, ...)` hashes against a dummy.
 - Refresh tokens:
   - opaque, stored only as SHA-256 hashes
@@ -319,6 +380,7 @@ Definition of Done (all must hold):
 - [ ] `pnpm typecheck && pnpm lint && pnpm lint:arch && pnpm test` pass (and `pnpm test:e2e` when HTTP behavior changed).
 - [ ] New or changed i18n keys exist in **all** locales; `src/generated/i18n.generated.ts` is regenerated.
 - [ ] Swagger is updated: DTO `@ApiProperty`, `@ApiEnvelopeResponse`, `@ApiErrorResponses` and `@ApiBearerAuth` where needed.
+- [ ] Every list endpoint follows §6 "Add a list endpoint": its DTO extends `ListQueryDto(<CONTEXT>_SORT_FIELDS)`, `sortBy` keys are API field names mapped to columns in `SORT_COLUMNS`, and its tests cover search, pagination, every sort key and a rejected `sortBy`.
 - [ ] Schema changes have a migration (`pnpm db:migrate --name <change>`), and new models have an owner in `prisma/ownership.json`.
 - [ ] New env variables are in `env.schema.ts`, `.env.example` and README.
 - [ ] No `TODO` without an explanation of what is missing and why.
@@ -336,11 +398,14 @@ Definition of Done (all must hold):
 - String messages in the domain or application layer (`throw new Error('User not found')`). Throw `DomainError` with a code.
 - Hardcoded user-facing text, or a locale missing a key.
 - Cross-module Prisma relations, or touching another module's tables.
+- A `GET` endpoint that returns a collection without `page`, `limit`, `search`, `sortBy` and `sortOrder`, or one that returns an unbounded array.
+- Column names as `sortBy` values, client input passed straight into Prisma `orderBy`, or hand-written `skip`/`take`/`orderBy` in a list repository instead of `toPrismaListArgs`.
+- Redeclaring the list params in a request DTO, or giving them other names.
 - Editing generated files (`src/generated/**`) by hand, or editing an applied migration.
 
 ## 12. Reference implementation
 
-- `src/modules/users`: aggregate with invariants and events (`User`), value objects (`Email`, `Role`, `UserStatus`), repository port + Prisma repository + mapper, vendor adapter (`Argon2PasswordHasher`), admin controller with pagination, public facade (`UsersFacade`).
+- `src/modules/users`: aggregate with invariants and events (`User`), value objects (`Email`, `Role`, `UserStatus`), repository port + Prisma repository + mapper, vendor adapter (`Argon2PasswordHasher`), admin list endpoint with search, sort and pagination (`GET /admin/users`: `USER_SORT_FIELDS`, `ListUsersRequestDto`, `SORT_COLUMNS` in `PrismaUserRepository`), public facade (`UsersFacade`).
 - `src/modules/auth`:
   - a consumer-side port over another module (`UserAccountPort` → `UsersFacadeUserAccountAdapter`)
   - a transactional use case (`RefreshSessionUseCase`) and a shared application service (`SessionIssuer`)

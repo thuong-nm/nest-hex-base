@@ -52,6 +52,7 @@ export type I18nTranslations = {
         "MIN_LENGTH": string;
         "MAX_LENGTH": string;
         "IS_ENUM": string;
+        "IS_IN": string;
         "IS_INT": string;
         "MIN": string;
         "MAX": string;

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '#src/generated/prisma/client.js';
 import { isUniqueViolation } from '#src/shared/infrastructure/database/prisma-errors.js';
+import { toPrismaListArgs } from '#src/shared/infrastructure/database/prisma-list-args.js';
 import { PrismaTransactionHost } from '#src/shared/infrastructure/database/transaction.js';
 import type { User } from '../../domain/entities/user.entity.js';
 import { UsersErrors } from '../../domain/errors/users.errors.js';
@@ -8,8 +9,17 @@ import type { Email } from '../../domain/value-objects/email.vo.js';
 import type {
   UserListCriteria,
   UserRepository,
+  UserSortField,
 } from '../../application/ports/user.repository.port.js';
 import { UserMapper } from './user.mapper.js';
+
+/** API sort key → column. A missing key or an unknown column fails typecheck. */
+const SORT_COLUMNS = {
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  email: 'email',
+  name: 'name',
+} as const satisfies Record<UserSortField, keyof Prisma.UserOrderByWithRelationInput>;
 
 @Injectable()
 export class PrismaUserRepository implements UserRepository {
@@ -47,12 +57,7 @@ export class PrismaUserRepository implements UserRepository {
       email: criteria.search ? { contains: criteria.search, mode: 'insensitive' } : undefined,
     };
     const [rows, total] = await Promise.all([
-      this.db.client.user.findMany({
-        where,
-        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-        skip: (criteria.page - 1) * criteria.limit,
-        take: criteria.limit,
-      }),
+      this.db.client.user.findMany({ where, ...toPrismaListArgs(criteria, SORT_COLUMNS) }),
       this.db.client.user.count({ where }),
     ]);
     return { items: rows.map((row) => UserMapper.toDomain(row)), total };

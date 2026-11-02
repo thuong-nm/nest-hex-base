@@ -14,10 +14,12 @@ export function aUser(
     password: string;
     role: Role;
     status: UserStatus;
+    createdAt: Date;
+    updatedAt: Date;
   }> = {},
 ): User {
   sequence += 1;
-  const now = new Date('2026-01-01T00:00:00.000Z');
+  const createdAt = overrides.createdAt ?? new Date('2026-01-01T00:00:00.000Z');
   return User.restore(
     overrides.id ?? `10000000-0000-4000-8000-${String(sequence).padStart(12, '0')}`,
     {
@@ -26,8 +28,8 @@ export function aUser(
       passwordHash: `hashed:${overrides.password ?? 'Password123'}`,
       role: overrides.role ?? Role.USER,
       status: overrides.status ?? UserStatus.ACTIVE,
-      createdAt: now,
-      updatedAt: now,
+      createdAt,
+      updatedAt: overrides.updatedAt ?? createdAt,
     },
   );
 }

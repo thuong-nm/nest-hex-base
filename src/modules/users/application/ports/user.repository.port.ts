@@ -1,15 +1,18 @@
+import { type ListQuery, sortFields } from '#src/shared/kernel/list-query.js';
 import type { User } from '../../domain/entities/user.entity.js';
 import type { Email } from '../../domain/value-objects/email.vo.js';
 import type { Role } from '../../domain/value-objects/role.vo.js';
 import type { UserStatus } from '../../domain/value-objects/user-status.vo.js';
 
-export interface UserListCriteria {
-  page: number;
-  limit: number;
+/** Sort keys as the API names them (fields of the user response); the repository maps them to columns. */
+export const USER_SORT_FIELDS = sortFields('email', 'name');
+
+export type UserSortField = (typeof USER_SORT_FIELDS)[number];
+
+/** `search` is a case-insensitive substring match on email. */
+export interface UserListCriteria extends ListQuery<UserSortField> {
   role?: Role;
   status?: UserStatus;
-  /** Case-insensitive substring match on email. */
-  search?: string;
 }
 
 export interface UserRepository {

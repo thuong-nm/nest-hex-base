@@ -97,17 +97,17 @@ All endpoints are under `/api/v1`, except `/health` and `/docs`. Every response 
   "meta": { "requestId": "…" } }
 ```
 
-| Method | Path                                         | Access                                                                 |
-| ------ | -------------------------------------------- | ---------------------------------------------------------------------- |
-| POST   | `/auth/register`                             | public (always creates a `USER`)                                       |
-| POST   | `/auth/login`                                | public                                                                 |
-| POST   | `/auth/refresh`                              | public (refresh token in body; single use)                             |
-| POST   | `/auth/logout`                               | public (revokes the given refresh token)                               |
-| GET    | `/auth/me`                                   | authenticated                                                          |
-| GET    | `/admin/users?page&limit&role&status&search` | `ADMIN`                                                                |
-| PATCH  | `/admin/users/:id/role`                      | `ADMIN` (not on yourself)                                              |
-| PATCH  | `/admin/users/:id/status`                    | `ADMIN` (not on yourself; disabling revokes the user's refresh tokens) |
-| GET    | `/health`                                    | public                                                                 |
+| Method | Path                                                          | Access                                                                 |
+| ------ | ------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| POST   | `/auth/register`                                              | public (always creates a `USER`)                                       |
+| POST   | `/auth/login`                                                 | public                                                                 |
+| POST   | `/auth/refresh`                                               | public (refresh token in body; single use)                             |
+| POST   | `/auth/logout`                                                | public (revokes the given refresh token)                               |
+| GET    | `/auth/me`                                                    | authenticated                                                          |
+| GET    | `/admin/users?page&limit&search&sortBy&sortOrder&role&status` | `ADMIN`                                                                |
+| PATCH  | `/admin/users/:id/role`                                       | `ADMIN` (not on yourself)                                              |
+| PATCH  | `/admin/users/:id/status`                                     | `ADMIN` (not on yourself; disabling revokes the user's refresh tokens) |
+| GET    | `/health`                                                     | public                                                                 |
 
 To get a translated response, send `lang: vi` (or `Accept-Language`). The resolved language is
 returned in `Content-Language`.

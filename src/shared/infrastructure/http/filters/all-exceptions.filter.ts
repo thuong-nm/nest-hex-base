@@ -172,7 +172,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (separator !== -1) {
       try {
         const parsed = JSON.parse(raw.slice(separator + 1)) as { constraints?: unknown[] };
-        constraints = Object.fromEntries((parsed.constraints ?? []).map((c, i) => [String(i), c]));
+        // Lists (e.g. @IsIn values) read better as "a, b" than the default "a,b".
+        constraints = Object.fromEntries(
+          (parsed.constraints ?? []).map((c, i) => [
+            String(i),
+            Array.isArray(c) ? c.join(', ') : c,
+          ]),
+        );
       } catch {
         constraints = {};
       }
